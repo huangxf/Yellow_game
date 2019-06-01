@@ -1,0 +1,144 @@
+#include "Core.h"
+
+bool Core::InitDevcie(HWND hWnd)
+{
+	if(hWnd == NULL)
+		return false;
+
+		D3D_FEATURE_LEVEL featureLevels[] =
+		{
+			D3D_FEATURE_LEVEL_11_1,
+			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_10_1,
+			D3D_FEATURE_LEVEL_10_0,
+			D3D_FEATURE_LEVEL_9_3,
+			D3D_FEATURE_LEVEL_9_2,
+			D3D_FEATURE_LEVEL_9_1
+		};
+
+
+		DXGI_SWAP_CHAIN_DESC swap_chain_desc = { 0 };
+
+		swap_chain_desc.BufferDesc.Width = this->width;
+		swap_chain_desc.BufferDesc.Height = this->height;
+		//swap_chain_desc.BufferDesc.RefreshRate.Numerator = 60;
+		//swap_chain_desc.BufferDesc.RefreshRate.Denominator = 1;
+		swap_chain_desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swap_chain_desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		swap_chain_desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;	
+
+		swap_chain_desc.SampleDesc.Count = 1;
+		swap_chain_desc.SampleDesc.Quality = 0;
+
+		swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swap_chain_desc.BufferCount = 1;
+		swap_chain_desc.OutputWindow = hWnd;
+		swap_chain_desc.Windowed = TRUE;
+		swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+
+		D3D_FEATURE_LEVEL level;
+		
+		//SwapChain
+		HRESULT hr;
+		hr = D3D11CreateDeviceAndSwapChain(NULL, //default Adapter
+			D3D_DRIVER_TYPE_HARDWARE,
+			NULL, //FOR SOFTWARE DRIVER TYPE
+			D3D11_CREATE_DEVICE_BGRA_SUPPORT, //FLAGS FOR RUNTIME LAYERS
+			featureLevels, //FEATURE LEVELS ARRAY
+			7, //# OF FEATURE LEVELS IN ARRAY
+			D3D11_SDK_VERSION,
+			&swap_chain_desc, //Swapchain description
+			this->swapChain.GetAddressOf(), //Swapchain Address
+			this->device.GetAddressOf(), //Device Address
+			&level, //Supported feature level
+			context.GetAddressOf()); //Device Context Address
+
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Device or SwapChain."); return false;}
+
+		//Back buffer
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
+		hr = this->swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Back buffer."); return false;}
+
+		//Render Target View
+		hr = this->device->CreateRenderTargetView(backBuffer.Get(), NULL, this->renderTargetView.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Render Target View."); return false;}
+
+		//Texture
+		D3D11_TEXTURE2D_DESC depthStencilDesc = { 0 };
+		depthStencilDesc.Width = width;
+		depthStencilDesc.Height = height;
+		depthStencilDesc.MipLevels = 1;
+		depthStencilDesc.ArraySize = 1;
+		depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilDesc.SampleDesc.Count = 1;
+		depthStencilDesc.SampleDesc.Quality = 0;
+		depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthStencilDesc.CPUAccessFlags = 0;
+		depthStencilDesc.MiscFlags = 0;
+
+		hr = this->device->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Texture."); return false;}
+
+		//Depth stencil
+		hr = this->device->CreateDepthStencilView(this->depthStencilBuffer.Get(), NULL, this->depthStencilView.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Depth stencil view."); return false;}
+
+		this->context->OMSetRenderTargets(1, this->renderTargetView.GetAddressOf(), this->depthStencilView.Get());
+
+		CD3D11_DEPTH_STENCIL_DESC depthstencildesc(D3D11_DEFAULT);
+		depthstencildesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
+
+		hr = this->device->CreateDepthStencilState(&depthstencildesc, this->depthStencilState.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Depth stencil State."); return false;}
+
+		//Viewport
+		CD3D11_VIEWPORT viewport(0.0f, 0.0f, static_cast<float>(this->width), static_cast<float>(this->height));
+		this->context->RSSetViewports(1, &viewport);
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Viewport."); return false;}
+
+		//Rasterizer
+		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
+		hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Rasterizer."); return false;}
+
+		//Sampler
+		CD3D11_SAMPLER_DESC sampDesc(D3D11_DEFAULT);
+		ZeroMemory(&sampDesc, sizeof(sampDesc));
+		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sampDesc.MinLOD = 0;
+		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		hr = this->device->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf());
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Sampler."); return false;}		
+
+		return true;
+
+}
+
+bool Core::InitShaders()
+{
+	VertexShader vertexshader(device, logger);
+	PixelShader pixelshader(device, logger);
+
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+	};
+
+	UINT numElements = ARRAYSIZE(layout);
+
+	if (!vertexshader.Create(L"../debug/vertexshader.cso", layout, numElements))
+		return false;
+
+	if (!pixelshader.Create(L"../debug/pixelshader.cso"))
+		return false;
+
+	return true;
+}
