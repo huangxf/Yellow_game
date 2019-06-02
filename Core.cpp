@@ -123,8 +123,7 @@ bool Core::InitDevcie(HWND hWnd)
 
 bool Core::InitShaders()
 {
-	VertexShader vertexshader(device, logger);
-	PixelShader pixelshader(device, logger);
+
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -134,11 +133,30 @@ bool Core::InitShaders()
 
 	UINT numElements = ARRAYSIZE(layout);
 
-	if (!vertexshader.Create(L"../debug/vertexshader.cso", layout, numElements))
+	if (!vertexShader.Create(device, L"F:/codebase/yellow/Yellow/Debug/vertexshader.cso", layout, numElements, logger))
 		return false;
 
-	if (!pixelshader.Create(L"../debug/pixelshader.cso"))
+	if (!pixelShader.Create(device, L"F:/codebase/yellow/Yellow/Debug/pixelshader.cso", logger))
 		return false;
 
+	return true;
+}
+
+bool Core::Render()
+{
+	float bgcolor[] = { 0.5f, 1.0f, 1.0f, 1.0f };
+	this->context->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
+	this->context->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	this->context->IASetInputLayout(this->vertexShader.GetInputLayout().Get());
+	this->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	this->context->RSSetState(this->rasterizerState.Get());
+	this->context->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
+	this->context->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
+	this->context->VSSetShader(vertexShader.GetShader().Get(), NULL, 0);
+	this->context->PSSetShader(pixelShader.GetShader().Get(), NULL, 0);
+
+
+	this->swapChain->Present(1, NULL);
 	return true;
 }

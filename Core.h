@@ -5,6 +5,7 @@
 #include "wrl/client.h"
 #include "LOG.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
 
@@ -37,6 +38,9 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
+
+	VertexShader vertexShader;
+	PixelShader pixelShader;
 
 	int width;
 	int height;

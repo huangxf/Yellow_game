@@ -3,6 +3,7 @@
 
 #include "d3d11.h"
 #include "wrl/client.h"
+#include "LOG.h"
 
 template <class T>
 class VertexBuffer
@@ -27,7 +28,8 @@ public:
 		vertexBufferData.pSysMem = data;
 
 		HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->buffer.GetAddressOf());
-		return hr;
+		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create vertex buffer."); return false;}
+		return true;
 	}
 
 	bool GetBuffer()
@@ -40,10 +42,14 @@ public:
 		return buffer.GetAddressOf();
 	}
 
+	VertexBuffer(ID3D11Device * device, LOG * logger): device(device), logger(logger) {}
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
 	UINT stride;
 	UINT bufferSize;
+	ID3D11Device* device;
+	LOG * logger;
 };
 
 #endif

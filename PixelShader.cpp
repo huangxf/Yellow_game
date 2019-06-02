@@ -1,6 +1,6 @@
 #include "PixelShader.h"
 
-bool PixelShader::Create(std::wstring path)
+bool PixelShader::Create(Microsoft::WRL::ComPtr<ID3D11Device> & device, std::wstring path, LOG * logger)
 {
 	HRESULT hr = D3DReadFileToBlob(path.c_str(), this->shader_buffer.GetAddressOf());
 		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot read Pixel Shader file."); return false;}

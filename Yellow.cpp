@@ -58,7 +58,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		engine.Render();
 	}
+
 
 
 	return (int) msg.wParam;
