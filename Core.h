@@ -2,12 +2,17 @@
 #define _CORE
 
 #include "d3d11.h"
+#include <DirectXMath.h>
 #include "wrl/client.h"
 #include "LOG.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include "WICTextureLoader.h"
+#include "VertexTypes.h"
 
 
 class Core
@@ -20,7 +25,7 @@ public:
 	
 
 	Core(): width(640),height(480),logger(NULL) {}
-	Core(LOG *logger): width(640),height(480),logger(logger) {}
+	Core(LOG *logger): width(640),height(480),logger(logger) { }
 
 	void SetLogger(LOG *logger) {this->logger = logger;}
 
@@ -41,6 +46,9 @@ private:
 
 	VertexShader vertexShader;
 	PixelShader pixelShader;
+
+	VertexBuffer<DirectX::VertexPositionNormalTexture> vertexBuffer;
+	IndexBuffer indexBuffer;
 
 	int width;
 	int height;

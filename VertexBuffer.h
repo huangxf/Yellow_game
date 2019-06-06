@@ -9,7 +9,7 @@ template <class T>
 class VertexBuffer
 {
 public:
-	bool Create(T *data, UINT numVertices)
+	bool Create(Microsoft::WRL::ComPtr<ID3D11Device> & device, T *data, UINT numVertices, LOG * logger)
 	{
 		this->bufferSize = numVertices;
 		this->stride = (UINT)(sizeof(T));
@@ -37,18 +37,31 @@ public:
 		return buffer;
 	}
 
-	bool GetBufferPtr()
+	ID3D11Buffer ** GetBufferPtr()
 	{
 		return buffer.GetAddressOf();
 	}
 
-	VertexBuffer(ID3D11Device * device, LOG * logger): device(device), logger(logger) {}
+	UINT GetStride()
+	{
+		return stride;
+	}
+
+	UINT * GetStridePtr()
+	{
+		return &stride;
+	}
+
+	UINT GetVerticesNum()
+	{
+		return bufferSize;
+	}
+
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
 	UINT stride;
 	UINT bufferSize;
-	ID3D11Device* device;
 	LOG * logger;
 };
 

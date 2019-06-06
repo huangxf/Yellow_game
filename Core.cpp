@@ -101,6 +101,8 @@ bool Core::InitDevcie(HWND hWnd)
 
 		//Rasterizer
 		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 		hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
 		if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot create Rasterizer."); return false;}
 
@@ -128,7 +130,8 @@ bool Core::InitShaders()
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"NORMAL",   0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
@@ -140,6 +143,40 @@ bool Core::InitShaders()
 		return false;
 
 	return true;
+}
+
+bool Core::InitScene()
+{
+	using namespace DirectX;
+	VertexPositionNormalTexture vertices[] = {
+		VertexPositionNormalTexture(XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 1.0f)),
+		VertexPositionNormalTexture(XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f)),
+		VertexPositionNormalTexture(XMFLOAT3( 0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(1.0f, 0.0f)),
+		VertexPositionNormalTexture(XMFLOAT3( 0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(1.0f, 1.0f))
+	};
+
+
+	DWORD indices[] = {
+		0,1,2,
+		0,2,3
+	};
+
+	if(!vertexBuffer.Create(device, vertices, 4, logger)) {
+		if(logger != NULL) logger->Add(L"Cannot create vertex buffer.");
+		return false;
+	}
+	
+	if(!indexBuffer.Create(device, indices, 6, logger)) {
+			if(logger != NULL) logger->Add(L"Cannot create index buffer.");
+		return false;	
+	}
+
+
+	HRESULT hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"F:/codebase/yellow/Yellow/Debug/DirectX_logo.jpg", NULL, texture.GetAddressOf());
+	if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot load texture."); return false;}
+
+	return true;
+
 }
 
 bool Core::Render()
@@ -155,6 +192,13 @@ bool Core::Render()
 	this->context->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
 	this->context->VSSetShader(vertexShader.GetShader().Get(), NULL, 0);
 	this->context->PSSetShader(pixelShader.GetShader().Get(), NULL, 0);
+
+
+	UINT offset = 0;
+	this->context->PSSetShaderResources(0, 1, this->texture.GetAddressOf());
+	this->context->IASetVertexBuffers(0, 1, vertexBuffer.GetBufferPtr(), vertexBuffer.GetStridePtr(), &offset);
+	this->context->IASetIndexBuffer(indexBuffer.GetBuffer(), DXGI_FORMAT_R32_UINT, 0);
+	this->context->DrawIndexed(indexBuffer.GetIndiciesNum(), 0, 0);
 
 
 	this->swapChain->Present(1, NULL);

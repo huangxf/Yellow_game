@@ -118,8 +118,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   CoInitialize(NULL);
+
    if(!engine.InitDevcie(hWnd)) return FALSE;
    if(!engine.InitShaders()) return FALSE;
+   if(!engine.InitScene()) return FALSE;
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);

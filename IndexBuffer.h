@@ -9,7 +9,7 @@
 class IndexBuffer
 {
 public:
-	bool Create(DWORD *data, UINT numIndices)
+	bool Create(Microsoft::WRL::ComPtr<ID3D11Device> & device, DWORD *data, UINT numIndices, LOG * logger)
 	{
 		this->bufferSize = numIndices;
 
@@ -39,12 +39,15 @@ public:
 		return buffer.GetAddressOf();
 	}
 
-	IndexBuffer(ID3D11Device * device, LOG * logger): device(device), logger(logger) {}
+	UINT GetIndiciesNum()
+	{
+		return bufferSize;
+	}
+
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
 	UINT bufferSize;
-	ID3D11Device* device;
 	LOG * logger;
 };
 
