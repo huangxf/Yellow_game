@@ -175,6 +175,8 @@ bool Core::InitScene()
 	HRESULT hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"F:/codebase/yellow/Yellow/Debug/DirectX_logo.jpg", NULL, texture.GetAddressOf());
 	if(FAILED(hr)) { if(logger != NULL) logger->Add(L"Cannot load texture."); return false;}
 
+	matConstantBuffer.Init(device.Get(), context.Get());
+
 	return true;
 
 }
@@ -195,6 +197,14 @@ bool Core::Render()
 
 
 	UINT offset = 0;
+
+	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity(); //Init scene matrix to identity
+	world = DirectX::XMMatrixTranspose(world);
+	this->matConstantBuffer.SetData(&world);
+	if(!this->matConstantBuffer.ApplyChange(context.Get())) return false;
+	context->VSSetConstantBuffers(0, 1, matConstantBuffer.GetAddressOf());
+	
+
 	this->context->PSSetShaderResources(0, 1, this->texture.GetAddressOf());
 	this->context->IASetVertexBuffers(0, 1, vertexBuffer.GetBufferPtr(), vertexBuffer.GetStridePtr(), &offset);
 	this->context->IASetIndexBuffer(indexBuffer.GetBuffer(), DXGI_FORMAT_R32_UINT, 0);

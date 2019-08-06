@@ -13,6 +13,7 @@
 #include "IndexBuffer.h"
 #include "WICTextureLoader.h"
 #include "VertexTypes.h"
+#include "ConstantBuffer.h"
 
 
 class Core
@@ -43,6 +44,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
+
+	ConstantBuffer<DirectX::XMMATRIX> matConstantBuffer;
 
 	VertexShader vertexShader;
 	PixelShader pixelShader;
