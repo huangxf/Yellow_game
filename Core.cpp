@@ -177,6 +177,23 @@ bool Core::InitScene()
 
 	matConstantBuffer.Init(device.Get(), context.Get());
 
+	DirectX::XMVECTOR pos = DirectX::XMVectorSet(0.0f, 0.0f, -2.0f, 0.0f);
+	DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	DirectX::XMVECTOR right = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	DirectX::XMVECTOR look = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+
+	camera.SetPos(pos);
+	camera.SetUp(up);
+	camera.SetRight(right);
+	camera.SetLook(look);
+	camera.UpdateView();
+
+	camera.SetFovDegree(90.0f);
+	camera.SetAspectRatio(640/480);
+	camera.SetNearZ(0);
+	camera.SetFarZ(1000);
+	camera.UpdateProjection();
+
 	return true;
 
 }
@@ -199,6 +216,7 @@ bool Core::Render()
 	UINT offset = 0;
 
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity(); //Init scene matrix to identity
+	world = world * camera.GetView() * camera.GetProjection();
 	world = DirectX::XMMatrixTranspose(world);
 	this->matConstantBuffer.SetData(&world);
 	if(!this->matConstantBuffer.ApplyChange(context.Get())) return false;

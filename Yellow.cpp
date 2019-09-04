@@ -145,6 +145,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
+	
+	static int x = 320;
+	static int y = 240;
+	int cur_x,cur_y,dx,dy;
+	float angle_pitch, angle_yaw;
+	static bool toggle = false;
 
 	switch (message)
 	{
@@ -168,6 +174,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hdc = BeginPaint(hWnd, &ps);
 		// TODO: 在此添加任意绘图代码...
 		EndPaint(hWnd, &ps);
+		break;
+	case WM_KEYDOWN:
+		switch ( wParam )
+		{
+			case 87:
+			case 229:
+				engine.GetWorldCamera().Walk(0.02);
+				break;
+			case 83:
+				engine.GetWorldCamera().Walk(-0.02);
+				break;
+			case 65:
+				engine.GetWorldCamera().Strade(-0.02);
+				break;
+			case 68:
+				engine.GetWorldCamera().Strade(0.02);
+				break;
+			case 32:
+				toggle = !toggle;
+				break;
+		}
+		engine.GetWorldCamera().UpdateView();
+		break;
+	case WM_MOUSEMOVE:
+		cur_x = LOWORD(lParam);
+		cur_y = HIWORD(lParam);
+
+		dx = cur_x - x;
+		dy = cur_y - y;
+
+		angle_yaw = (abs(dx * 0.001) > 2 * 3.14159) ? 0.0f : dx * 0.001;
+		angle_pitch = (abs(dy * 0.001) > 3.14159 / 2 ) ? 0.0f : dy * 0.001;
+
+		x = cur_x;
+		y = cur_y;
+
+		if(toggle) {
+			engine.GetWorldCamera().Yaw(angle_yaw);
+			engine.GetWorldCamera().Pitch(angle_pitch);
+			engine.GetWorldCamera().UpdateView();
+		}
+
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);

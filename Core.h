@@ -14,6 +14,7 @@
 #include "WICTextureLoader.h"
 #include "VertexTypes.h"
 #include "ConstantBuffer.h"
+#include "Camera.h"
 
 
 class Core
@@ -23,6 +24,7 @@ public:
 	bool InitShaders();
 	bool InitScene();
 	bool Render();
+	Camera & GetWorldCamera() { return camera; }
 	
 
 	Core(): width(640),height(480),logger(NULL) {}
@@ -52,6 +54,8 @@ private:
 
 	VertexBuffer<DirectX::VertexPositionNormalTexture> vertexBuffer;
 	IndexBuffer indexBuffer;
+
+	Camera camera;
 
 	int width;
 	int height;
